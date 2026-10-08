@@ -1,13 +1,15 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import { WorkRecord, Project, ViewMode } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { exportToCSV, exportToJSON, DEFAULT_PROJECTS } from './utils/helpers';
 import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
 import RecordTable from './components/RecordTable';
 import RecordForm from './components/RecordForm';
 import GanttView from './components/GanttView';
 import PomodoroTimer from './components/PomodoroTimer';
+
+// Dashboard 含 recharts（體積大），改為動態載入以縮小初始 bundle
+const Dashboard = lazy(() => import('./components/Dashboard'));
 import {
   Plus, Download, FileJson, Search, LayoutDashboard,
   Table2, GanttChartSquare, Menu, X, Zap
@@ -39,7 +41,7 @@ export default function App() {
         r.status.toLowerCase().includes(q)
       );
     }
-    return filtered.sort((a, b) => b.date.localeCompare(a.date));
+    return [...filtered].sort((a, b) => b.date.localeCompare(a.date));
   }, [records, selectedProject, searchQuery]);
 
   // Record counts per project
@@ -240,7 +242,17 @@ export default function App() {
             )}
 
             {/* View Content */}
-            {viewMode === 'dashboard' && <Dashboard records={filteredRecords} />}
+            {viewMode === 'dashboard' && (
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center h-52 text-xs text-aurora-muted">
+                    載入中…
+                  </div>
+                }
+              >
+                <Dashboard records={filteredRecords} />
+              </Suspense>
+            )}
             {viewMode === 'table' && (
               <div className="bg-aurora-surface border border-aurora-border rounded-xl overflow-hidden">
                 <RecordTable

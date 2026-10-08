@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { WorkRecord } from '../types';
-import { SYSTEM_TYPES, STATUS_OPTIONS, DEFAULT_PROJECTS } from '../utils/helpers';
+import { SYSTEM_TYPES, STATUS_OPTIONS, DEFAULT_PROJECTS, toLocalDateString } from '../utils/helpers';
 import { X, Save } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -14,7 +14,7 @@ interface RecordFormProps {
 export default function RecordForm({ record, onSave, onClose, projects }: RecordFormProps) {
   const allProjects = projects.length > 0 ? projects : DEFAULT_PROJECTS;
   const [form, setForm] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: toLocalDateString(),
     projectCode: allProjects[0]?.code || '',
     systemType: 'SCADA' as WorkRecord['systemType'],
     hours: 1,

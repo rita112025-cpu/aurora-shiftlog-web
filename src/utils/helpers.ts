@@ -19,17 +19,34 @@ export const DEFAULT_PROJECTS: Project[] = [
   { code: 'TWN-GTS-XDL-AI-001', name: 'AI 預測維護平台', client: '內部研發' },
 ];
 
+/**
+ * 以「本地時區」取得 YYYY-MM-DD 字串。
+ * 不可用 toISOString()：在 UTC+8 的 00:00–07:59 會得到前一天。
+ */
+export function toLocalDateString(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** 將 YYYY-MM-DD 解析為本地時區的 Date（避免 toISOString 的 UTC 偏移問題） */
+export function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+}
+
 export function getWeekDates(): string[] {
   const now = new Date();
   const dayOfWeek = now.getDay();
   const monday = new Date(now);
   monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-  
+
   const dates: string[] = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    dates.push(d.toISOString().split('T')[0]);
+    dates.push(toLocalDateString(d));
   }
   return dates;
 }
@@ -56,7 +73,7 @@ export function getTotalHours(records: WorkRecord[]): number {
 }
 
 export function getTodayHours(records: WorkRecord[]): number {
-  const today = new Date().toISOString().split('T')[0];
+  const today = toLocalDateString();
   return records.filter(r => r.date === today).reduce((sum, r) => sum + r.hours, 0);
 }
 
@@ -69,23 +86,25 @@ export function getThisWeekHours(records: WorkRecord[]): number {
 
 export function exportToCSV(records: WorkRecord[]): void {
   const headers = ['日期', '專案代號', '系統別', '工時', '備註', '狀態'];
+  // 所有欄位一律以引號包裹並轉義內部引號，避免內容含逗號/引號時破壞 CSV 格式
+  const escapeCell = (value: string) => `"${value.replace(/"/g, '""')}"`;
   const rows = records.map(r => [
-    r.date,
-    r.projectCode,
-    r.systemType,
-    r.hours.toString(),
-    `"${r.notes.replace(/"/g, '""')}"`,
-    r.status,
+    escapeCell(r.date),
+    escapeCell(r.projectCode),
+    escapeCell(r.systemType),
+    escapeCell(r.hours.toString()),
+    escapeCell(r.notes),
+    escapeCell(r.status),
   ]);
-  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const csv = [headers.map(escapeCell).join(','), ...rows.map(r => r.join(','))].join('\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  downloadBlob(blob, `shiftlog_export_${new Date().toISOString().split('T')[0]}.csv`);
+  downloadBlob(blob, `shiftlog_export_${toLocalDateString()}.csv`);
 }
 
 export function exportToJSON(records: WorkRecord[]): void {
   const json = JSON.stringify(records, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
-  downloadBlob(blob, `shiftlog_export_${new Date().toISOString().split('T')[0]}.json`);
+  downloadBlob(blob, `shiftlog_export_${toLocalDateString()}.json`);
 }
 
 function downloadBlob(blob: Blob, filename: string): void {
@@ -100,12 +119,12 @@ function downloadBlob(blob: Blob, filename: string): void {
 }
 
 export function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
+  const d = parseLocalDate(dateStr);
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
 export function getDayName(dateStr: string): string {
   const days = ['日', '一', '二', '三', '四', '五', '六'];
-  const d = new Date(dateStr);
+  const d = parseLocalDate(dateStr);
   return days[d.getDay()];
 }

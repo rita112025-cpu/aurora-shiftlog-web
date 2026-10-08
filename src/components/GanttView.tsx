@@ -1,4 +1,5 @@
 import { WorkRecord } from '../types';
+import { toLocalDateString, parseLocalDate } from '../utils/helpers';
 
 interface GanttViewProps {
   records: WorkRecord[];
@@ -27,13 +28,13 @@ export default function GanttView({ records }: GanttViewProps) {
   const minDate = allDates[0];
   const maxDate = allDates[allDates.length - 1];
 
-  // Generate date range
+  // Generate date range (本地時區，避免 UTC 偏移造成日期位移)
   const dateRange: string[] = [];
-  const start = new Date(minDate);
-  const end = new Date(maxDate);
+  const start = parseLocalDate(minDate);
+  const end = parseLocalDate(maxDate);
   const current = new Date(start);
   while (current <= end) {
-    dateRange.push(current.toISOString().split('T')[0]);
+    dateRange.push(toLocalDateString(current));
     current.setDate(current.getDate() + 1);
   }
 
@@ -57,7 +58,7 @@ export default function GanttView({ records }: GanttViewProps) {
     return projectRecords.find(r => r.date === date);
   };
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = toLocalDateString();
 
   return (
     <div className="animate-fade-in">
@@ -70,7 +71,7 @@ export default function GanttView({ records }: GanttViewProps) {
           <div className="overflow-x-auto flex-1">
             <div className="flex" style={{ minWidth: displayDates.length * dayWidth }}>
               {displayDates.map(date => {
-                const d = new Date(date);
+                const d = parseLocalDate(date);
                 const isToday = date === today;
                 const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                 return (

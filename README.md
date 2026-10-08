@@ -56,8 +56,7 @@ Aurora ShiftLog Pro 是專為 SCADA / 系統整合 (SI) 工程師打造的現代
 | Tailwind CSS | 4.x | 樣式系統 |
 | Recharts | 2.x | 圖表繪製 |
 | Lucide React | 0.294 | 圖示庫 |
-| date-fns | 2.x | 日期處理 |
-| uuid | 9.x | 唯一 ID 產生 |
+| uuid | 11.x | 唯一 ID 產生 |
 
 ## 🚀 快速開始
 
