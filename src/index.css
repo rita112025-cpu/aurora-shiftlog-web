@@ -1,1 +1,79 @@
 @import "tailwindcss";
+
+@theme {
+  --color-aurora-bg: #0f1117;
+  --color-aurora-surface: #1a1d27;
+  --color-aurora-card: #222639;
+  --color-aurora-border: #2d3348;
+  --color-aurora-accent: #00d4ff;
+  --color-aurora-accent-dim: #0099cc;
+  --color-aurora-glow: rgba(0, 212, 255, 0.15);
+  --color-aurora-text: #e2e8f0;
+  --color-aurora-muted: #94a3b8;
+  --color-aurora-danger: #ff4757;
+  --color-aurora-success: #2ed573;
+  --color-aurora-warning: #ffa502;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2d3348 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #2d3348;
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #00d4ff44;
+}
+
+body {
+  font-family: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #0f1117;
+  color: #e2e8f0;
+}
+
+.aurora-glow {
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.1), 0 0 60px rgba(0, 212, 255, 0.05);
+}
+
+.aurora-border-glow {
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.03);
+}
+
+.pulse-dot {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px #00d4ff; }
+  50% { opacity: 0.6; box-shadow: 0 0 12px #00d4ff; }
+}
+
+.grid-bg {
+  background-image: 
+    linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
