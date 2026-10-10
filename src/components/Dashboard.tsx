@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { WorkRecord } from '../types';
-import { getWeeklyHours, getProjectDistribution, getTotalHours, getTodayHours, getThisWeekHours, formatDate, getDayName } from '../utils/helpers';
+import { getWeeklyHours, getProjectDistribution, getTotalHours, getTodayHours, getThisWeekHours, formatDate, getDayName, toLocalDateString } from '../utils/helpers';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Clock, TrendingUp, Calendar, Activity } from 'lucide-react';
 
@@ -10,11 +11,13 @@ interface DashboardProps {
 const PIE_COLORS = ['#00d4ff', '#2ed573', '#ffa502', '#ff4757', '#a855f7', '#06b6d4', '#f97316'];
 
 export default function Dashboard({ records }: DashboardProps) {
-  const weeklyData = getWeeklyHours(records);
-  const projectDist = getProjectDistribution(records);
-  const totalHours = getTotalHours(records);
-  const todayHours = getTodayHours(records);
-  const weekHours = getThisWeekHours(records);
+  // 每次渲染取今日日期字串（成本可忽略）；跨日後任何 re-render 都能刷新日期相關統計
+  const todayString = toLocalDateString();
+  const weeklyData = useMemo(() => getWeeklyHours(records), [records, todayString]);
+  const projectDist = useMemo(() => getProjectDistribution(records), [records]);
+  const totalHours = useMemo(() => getTotalHours(records), [records]);
+  const todayHours = useMemo(() => getTodayHours(records), [records, todayString]);
+  const weekHours = useMemo(() => getThisWeekHours(records), [records, todayString]);
   const avgDaily = records.length > 0 ? (weekHours / 7).toFixed(1) : '0';
 
   const stats = [

@@ -9,6 +9,34 @@ export const STATUS_OPTIONS = [
   { value: 'review', label: '審核中', color: 'bg-purple-500/20 text-purple-400' },
 ] as const;
 
+/** 系統別對應的徽章樣式（紀錄列表用） */
+export const SYSTEM_BADGE_COLORS: Record<string, string> = {
+  SCADA: 'bg-cyan-500/20 text-cyan-400',
+  REVIT: 'bg-green-500/20 text-green-400',
+  AI: 'bg-purple-500/20 text-purple-400',
+  PLC: 'bg-orange-500/20 text-orange-400',
+  HMI: 'bg-pink-500/20 text-pink-400',
+  OTHER: 'bg-gray-500/20 text-gray-400',
+};
+
+/** 系統別對應的實心區塊樣式（甘特圖用） */
+export const SYSTEM_BLOCK_COLORS: Record<string, string> = {
+  SCADA: 'bg-cyan-500/70',
+  REVIT: 'bg-green-500/70',
+  AI: 'bg-purple-500/70',
+  PLC: 'bg-orange-500/70',
+  HMI: 'bg-pink-500/70',
+  OTHER: 'bg-gray-500/70',
+};
+
+export function getSystemBadgeColor(type: string): string {
+  return SYSTEM_BADGE_COLORS[type] ?? SYSTEM_BADGE_COLORS.OTHER;
+}
+
+export function getSystemBlockColor(type: string): string {
+  return SYSTEM_BLOCK_COLORS[type] ?? SYSTEM_BLOCK_COLORS.OTHER;
+}
+
 export const DEFAULT_PROJECTS: Project[] = [
   { code: 'TWN-GTS-XDL-SI-001', name: '高雄捷運 SCADA 整合', client: '高捷公司' },
   { code: 'TWN-GTS-XDL-SI-002', name: '桃園水務監控系統', client: '桃園市政府' },
@@ -78,9 +106,9 @@ export function getTodayHours(records: WorkRecord[]): number {
 }
 
 export function getThisWeekHours(records: WorkRecord[]): number {
-  const weekDates = getWeekDates();
+  const weekDates = new Set(getWeekDates());
   return records
-    .filter(r => weekDates.includes(r.date))
+    .filter(r => weekDates.has(r.date))
     .reduce((sum, r) => sum + r.hours, 0);
 }
 

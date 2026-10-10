@@ -1,11 +1,51 @@
+import { useMemo } from 'react';
 import { WorkRecord } from '../types';
-import { toLocalDateString, parseLocalDate } from '../utils/helpers';
+import { toLocalDateString, parseLocalDate, getSystemBlockColor } from '../utils/helpers';
 
 interface GanttViewProps {
   records: WorkRecord[];
 }
 
+/** 產生起始日到結束日之間的日期字串（本地時區，避免 UTC 偏移造成日期位移） */
+function buildDateRange(minDate: string, maxDate: string): string[] {
+  const range: string[] = [];
+  const end = parseLocalDate(maxDate);
+  const current = parseLocalDate(minDate);
+  while (current <= end) {
+    range.push(toLocalDateString(current));
+    current.setDate(current.getDate() + 1);
+  }
+  return range;
+}
+
 export default function GanttView({ records }: GanttViewProps) {
+  // 衍生資料：按專案分組、日期範圍、日期→紀錄索引，僅在 records 變動時重算
+  const { projectGroups, displayDates } = useMemo(() => {
+    const groups: Record<string, WorkRecord[]> = {};
+    let minDate = '';
+    let maxDate = '';
+    records.forEach(r => {
+      (groups[r.projectCode] ??= []).push(r);
+      if (!minDate || r.date < minDate) minDate = r.date;
+      if (!maxDate || r.date > maxDate) maxDate = r.date;
+    });
+    // 僅顯示最近 30 天
+    const dates = minDate ? buildDateRange(minDate, maxDate).slice(-30) : [];
+    return { projectGroups: groups, displayDates: dates };
+  }, [records]);
+
+  // 以「專案代號|日期」建立 O(1) 查找索引，避免每格線性搜尋
+  // 注意：同一專案同日若有多筆紀錄，原實作 find() 顯示「第一筆」，
+  // 故僅在 key 不存在時寫入，保留原有顯示邏輯
+  const recordIndex = useMemo(() => {
+    const index = new Map<string, WorkRecord>();
+    records.forEach(r => {
+      const key = `${r.projectCode}|${r.date}`;
+      if (!index.has(key)) index.set(key, r);
+    });
+    return index;
+  }, [records]);
+
   if (records.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-aurora-muted animate-fade-in">
@@ -16,48 +56,7 @@ export default function GanttView({ records }: GanttViewProps) {
     );
   }
 
-  // Group records by project
-  const projectGroups: Record<string, WorkRecord[]> = {};
-  records.forEach(r => {
-    if (!projectGroups[r.projectCode]) projectGroups[r.projectCode] = [];
-    projectGroups[r.projectCode].push(r);
-  });
-
-  // Find date range
-  const allDates = records.map(r => r.date).sort();
-  const minDate = allDates[0];
-  const maxDate = allDates[allDates.length - 1];
-
-  // Generate date range (本地時區，避免 UTC 偏移造成日期位移)
-  const dateRange: string[] = [];
-  const start = parseLocalDate(minDate);
-  const end = parseLocalDate(maxDate);
-  const current = new Date(start);
-  while (current <= end) {
-    dateRange.push(toLocalDateString(current));
-    current.setDate(current.getDate() + 1);
-  }
-
-  // Limit display to max 30 days
-  const displayDates = dateRange.slice(-30);
   const dayWidth = Math.max(28, Math.min(40, 800 / displayDates.length));
-
-  const getSystemColor = (type: string) => {
-    const colors: Record<string, string> = {
-      SCADA: 'bg-cyan-500/70',
-      REVIT: 'bg-green-500/70',
-      AI: 'bg-purple-500/70',
-      PLC: 'bg-orange-500/70',
-      HMI: 'bg-pink-500/70',
-      OTHER: 'bg-gray-500/70',
-    };
-    return colors[type] || colors.OTHER;
-  };
-
-  const getDayRecord = (projectRecords: WorkRecord[], date: string) => {
-    return projectRecords.find(r => r.date === date);
-  };
-
   const today = toLocalDateString();
 
   return (
@@ -109,7 +108,7 @@ export default function GanttView({ records }: GanttViewProps) {
               <div className="overflow-x-auto flex-1">
                 <div className="flex" style={{ minWidth: displayDates.length * dayWidth }}>
                   {displayDates.map(date => {
-                    const dayRecord = getDayRecord(projectRecords, date);
+                    const dayRecord = recordIndex.get(`${projectCode}|${date}`);
                     const isToday = date === today;
                     return (
                       <div
@@ -121,7 +120,7 @@ export default function GanttView({ records }: GanttViewProps) {
                       >
                         {dayRecord && (
                           <div
-                            className={`h-6 rounded ${getSystemColor(dayRecord.systemType)} flex items-center justify-center`}
+                            className={`h-6 rounded ${getSystemBlockColor(dayRecord.systemType)} flex items-center justify-center`}
                             title={`${dayRecord.systemType} - ${dayRecord.hours}h`}
                           >
                             <span className="text-[8px] font-bold text-white/90">{dayRecord.hours}</span>
@@ -142,7 +141,7 @@ export default function GanttView({ records }: GanttViewProps) {
         <span className="text-[10px] text-aurora-muted">系統別：</span>
         {['SCADA', 'REVIT', 'AI', 'PLC', 'HMI'].map(type => (
           <div key={type} className="flex items-center gap-1.5">
-            <div className={`w-3 h-3 rounded ${getSystemColor(type)}`} />
+            <div className={`w-3 h-3 rounded ${getSystemBlockColor(type)}`} />
             <span className="text-[10px] text-aurora-muted">{type}</span>
           </div>
         ))}

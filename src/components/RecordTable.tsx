@@ -1,5 +1,5 @@
 import { WorkRecord } from '../types';
-import { STATUS_OPTIONS, formatDate } from '../utils/helpers';
+import { STATUS_OPTIONS, getSystemBadgeColor } from '../utils/helpers';
 import { Edit3, Trash2 } from 'lucide-react';
 
 interface RecordTableProps {
@@ -13,17 +13,7 @@ export default function RecordTable({ records, onEdit, onDelete }: RecordTablePr
     return STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0];
   };
 
-  const getSystemColor = (type: string) => {
-    const colors: Record<string, string> = {
-      SCADA: 'bg-cyan-500/20 text-cyan-400',
-      REVIT: 'bg-green-500/20 text-green-400',
-      AI: 'bg-purple-500/20 text-purple-400',
-      PLC: 'bg-orange-500/20 text-orange-400',
-      HMI: 'bg-pink-500/20 text-pink-400',
-      OTHER: 'bg-gray-500/20 text-gray-400',
-    };
-    return colors[type] || colors.OTHER;
-  };
+  const getSystemColor = getSystemBadgeColor;
 
   if (records.length === 0) {
     return (

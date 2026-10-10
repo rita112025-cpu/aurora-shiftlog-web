@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Coffee } from 'lucide-react';
 
 const WORK_MINUTES = 25;
@@ -12,14 +12,19 @@ export default function PomodoroTimer() {
   // 以「剩餘秒數」為單一狀態來源，避免在 setState updater 內呼叫其他 setState
   const [total, setTotal] = useState(WORK_MINUTES * 60);
   const [remaining, setRemaining] = useState(WORK_MINUTES * 60);
+  // 以截止時間戳推算剩餘秒數，避免 setInterval 累積誤差與背景分頁節流造成的漂移
+  const endAtRef = useRef(0);
 
-  // 每秒遞減（updater 為純函式）
+  // 啟動時記錄截止時間，定期以 Date.now() 重算剩餘秒數
   useEffect(() => {
     if (!isRunning) return;
+    endAtRef.current = Date.now() + remaining * 1000;
     const id = window.setInterval(() => {
-      setRemaining(prev => Math.max(0, prev - 1));
-    }, 1000);
+      setRemaining(Math.max(0, Math.round((endAtRef.current - Date.now()) / 1000)));
+    }, 250);
     return () => window.clearInterval(id);
+    // remaining 只在啟動當下讀取一次，不列入依賴以避免重設截止時間
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning]);
 
   // 倒數歸零時切換階段
